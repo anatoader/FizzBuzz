@@ -1,4 +1,4 @@
-const prompt2 = require('prompt-sync')({sigint: true});
+const prompt_sync = require('prompt-sync')({sigint: true});
 
 const FIZZ_STR: string = "Fizz";
 const BUZZ_STR: string = "Buzz";
@@ -10,66 +10,36 @@ const EMPTY_STR: string = "";
 // Running mode (DEFAULT / CUSTOM)
 let mode: string;
 
-// Map storing [number, string] entries added by user
-let customRulesMap:Map<number, string> = new Map();
-
-type Status = {
-    divisible: boolean;
-}
-
 type Rules = {
     type3: boolean;
     type5: boolean;
     type13: boolean;
 }
 
-let rules:Rules = {type3:false, type5:false, type13:false};
-
-// If given value is divisible by divisor, return str, otherwise return the empty string
-// Set the status accordingly
-function getString(value: number, divisor: number, str: string, status:Status): string {
-    let message: string;
-    if (value % divisor == 0) {
-        message = str;
-        status.divisible = true;
-    } else {
-        message = EMPTY_STR;
-    }
-
-    return message;
-}
-
 function fizzbuzz(endValue: number, rules:Rules): void {
     let fizz, buzz, bang, fezz, message: string;
-    let status:Status;
-    let i, indexB:number;
+    let currNumber, indexB:number;
 
-    for (i = 1; i <= endValue; i++) {
-        status = {divisible:false};
+    for (currNumber = 1; currNumber <= endValue; currNumber++) {
+        fizz = (rules.type3 && currNumber % 3 == 0) ? FIZZ_STR : EMPTY_STR;
+        buzz = (rules.type5 && currNumber % 5 == 0) ? BUZZ_STR : EMPTY_STR;
+        fezz = (rules.type13 && currNumber % 13 == 0) ? FEZZ_STR : EMPTY_STR;
+        bang = (currNumber % 7 == 0) ? BANG_STR : EMPTY_STR;
 
-        fizz = (rules.type3) ? getString(i, 3, FIZZ_STR, status) : EMPTY_STR;
-        buzz = (rules.type5) ? getString(i, 5, BUZZ_STR, status) : EMPTY_STR;
-        fezz = (rules.type13) ? getString(i, 13, FEZZ_STR, status) : EMPTY_STR;
-        bang = getString(i, 7, BANG_STR, status);
-
-        if (i % 11 == 0) {
+        if (currNumber % 11 == 0) {
             console.log(fezz + BONG_STR);
             continue;
         }
 
-        if (status.divisible) {
-            if (i % 17 == 0) {
+        message = fizz + buzz + bang;
+
+        if (message != "") {
+            if (currNumber % 17 == 0) {
                 console.log(bang + buzz + fizz);
                 continue;
             }
 
-            message = fizz + buzz + bang;
             indexB = message.indexOf("B");
-
-            if (message == "" && fezz == "") {
-                console.log(i);
-                continue;
-            }
 
             if (indexB == -1) {
                 console.log(message + fezz);
@@ -78,58 +48,57 @@ function fizzbuzz(endValue: number, rules:Rules): void {
             }
 
         } else {
-            console.log(i);
+            console.log(currNumber);
         }
     }
 }
 
 // Custom functionality added by user
 function customMode(endValue: number): void {
-    let i: number;
+    let currNumber: number;
     let message: string;
-    let status: Status;
 
-    for (i = 1; i <= endValue; i++) {
-        status = {divisible: false};
+    let customRulesMap: Map<number, string> = getCustomRulesFromUser();
+
+    for (currNumber = 1; currNumber <= endValue; currNumber++) {
         message = "";
-        for (let entry of customRulesMap.entries()) {
-            message += getString(i, entry[0], entry[1], status);
-        }
+        customRulesMap.forEach((customMessage: string, divisor: number) => {
+            message += (currNumber % divisor == 0) ? customMessage : "";
+        });
 
-        if (status.divisible) {
-            console.log(message);
-        } else {
-            console.log(i);
-        }
+        console.log((message != "") ? message : currNumber);
     }
 }
 
 // Get 'y' / 'n' from user and convert it to a boolean value
 function getBooleanFromUser(message: string): boolean {
-    let str: string = prompt2(message)??"";
+    let str: string = prompt_sync(message)??"";
     let valid: boolean = (str == 'y' || str == 'n');
 
     while (!valid) {
-        str = prompt2('Invalid option. Please try again:')??"";
-        valid = (str == 'y' || str == 'c');
+        str = prompt_sync('Invalid option. Please try again:')??"";
+        valid = (str == 'y' || str == 'n');
     }
 
-    return str.indexOf('y') != -1;
+    return str == 'y';
 }
 
-function getTypesFromUser(): void {
+function getTypesFromUser(): Rules {
+    let rules:Rules = {type3:false, type5:false, type13:false};
     rules.type3 = getBooleanFromUser('Implement type 3 rule? (y/n):');
     rules.type5 = getBooleanFromUser('Implement type 5 rule? (y/n):');
     rules.type13 = getBooleanFromUser('Implement type 13 rule? (y/n):');
+
+    return rules;
 }
 
 // Prompt the user to provide the running mode (default - fizzbuzz, or custom)
 function getModeFromUser(): string {
-    let str:string = prompt2('Please choose mode (d - default/ c - custom):')??"";
+    let str:string = prompt_sync('Please choose mode (d - default/ c - custom):')??"";
     let valid: boolean = (str == 'd' || str == 'c');
 
     while (!valid) {
-        str = prompt2('Invalid choice. Please try again:')??"";
+        str = prompt_sync('Invalid choice. Please try again:')??"";
         valid = (str == 'd' || str == 'c');
     }
 
@@ -137,11 +106,11 @@ function getModeFromUser(): string {
 }
 
 function getNumberFromUser(): number {
-    return parseInt(prompt2('Please enter a number:') ?? "1");
+    return parseInt(prompt_sync('Please enter a number:') ?? "1");
 }
 
 function getStringFromUser(): string {
-    return prompt2('Please enter a string:')??"";
+    return prompt_sync('Please enter a string:')??"";
 }
 
 function getRuleFromUser(): [number, string] {
@@ -150,30 +119,32 @@ function getRuleFromUser(): [number, string] {
     return [num, message];
 }
 
-function getCustomRulesFromUser(customRulesMap:Map<number, string>): void {
+function getCustomRulesFromUser(): Map<number, string> {
+    let customRulesMap: Map<number, string> = new Map();
     let input: boolean = getBooleanFromUser('Enter a new rule? (y/n):');
-    let num: number;
-    let message: string;
+    let divisor: number;
+    let customMessage: string;
+
     while (input) {
-        [num, message] = getRuleFromUser();
-        customRulesMap.set(num, message);
+        [divisor, customMessage] = getRuleFromUser();
+        customRulesMap.set(divisor, customMessage);
 
         input = getBooleanFromUser('Enter a new rule? (y/n):');
     }
+
+    return customRulesMap;
 }
 
 function main(): void {
     mode = getModeFromUser();
     console.log(`Now running in ${mode} mode`);
-    let endValue: number = parseInt(prompt2('Please enter a number:') ?? "0");
+    let endValue: number = parseInt(prompt_sync('Please enter a number:') ?? "0");
 
     if (mode == 'DEFAULT') {
-        getTypesFromUser();
+        let rules: Rules = getTypesFromUser();
 
         fizzbuzz(endValue, rules);
     } else {
-        getCustomRulesFromUser(customRulesMap);
-
         customMode(endValue);
     }
 }
